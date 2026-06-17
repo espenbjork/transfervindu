@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overgangsvindu – ÅPENT</title>
+<style>
+  /* ============================================================
+     REDIGER ENKELT HER
+     - START_MINUTES  : minutter klokka teller ned fra (i <script>)
+     - TWEETS         : nyhetsbåndet         (i <script>)
+     - BREAKINGS      : breaking-overskrifter (i <script>)
+     - JONAS_CARD     : spillerkortet         (i <script>)
+     ============================================================ */
+  :root{
+    --gul:#ffd000;
+    --oransje:#ff8a00;
+    --dyporansje:#e85d00;
+    --moerk:#1c1200;
+    --tekst:#1a1305;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; overflow:hidden; }
+  body{
+    font-family:"Arial Black","Helvetica Neue",Arial,sans-serif;
+    background:#000; color:var(--tekst);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- BAKGRUNN ---------- */
+  .scene{
+    position:fixed; inset:0; overflow:hidden;
+    background:linear-gradient(135deg, #fff3a0 0%, var(--gul) 22%, var(--oransje) 62%, var(--dyporansje) 100%);
+  }
+  .scene::before{
+    content:""; position:absolute; inset:-30%;
+    background:
+      radial-gradient(60% 60% at 20% 20%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(50% 50% at 85% 80%, rgba(232,93,0,.55), transparent 60%);
+    animation:drift 14s ease-in-out infinite alternate;
+    mix-blend-mode:soft-light;
+  }
+  @keyframes drift{
+    from{ transform:translate(-3%,-2%) scale(1.05); }
+    to  { transform:translate(4%,3%)  scale(1.15); }
+  }
+  /* animerte chevroner som glir */
+  .chevrons{
+    position:absolute; inset:-20%;
+    background-image:repeating-linear-gradient(-45deg,
+      rgba(255,255,255,.10) 0px, rgba(255,255,255,.10) 2px,
+      transparent 2px, transparent 80px);
+    animation:slide 6s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes slide{ to{ transform:translate(80px,80px); } }
+
+  /* film-grain + vignett */
+  .grain{
+    position:absolute; inset:0; pointer-events:none; z-index:8;
+    opacity:.07; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain .5s steps(2) infinite;
+  }
+  @keyframes grain{ 0%{transform:translate(0,0)} 50%{transform:translate(-6px,4px)} 100%{transform:translate(4px,-5px)} }
+  .vignette{
+    position:absolute; inset:0; pointer-events:none; z-index:7;
+    box-shadow:inset 0 0 22vw rgba(40,20,0,.45);
+    background:radial-gradient(120% 120% at 50% 45%, transparent 55%, rgba(30,15,0,.35) 100%);
+  }
+
+  /* ---------- TOPPLINJE ---------- */
+  .topbar{
+    position:absolute; top:0; left:0; right:0; display:flex;
+    align-items:center; justify-content:space-between;
+    padding:clamp(14px,2vw,28px) clamp(20px,3vw,48px); z-index:5;
+  }
+  .logo{ display:flex; align-items:center; gap:8px; }
+  .logo .sky{ color:#0a3aff; font-style:italic; font-size:clamp(20px,2.4vw,34px); letter-spacing:-.02em; text-shadow:0 1px 0 rgba(255,255,255,.4); }
+  .logo .sport{ background:#e2002a; color:#fff; font-style:italic; font-size:clamp(20px,2.4vw,34px); padding:0 .25em; border-radius:4px; letter-spacing:-.02em; }
+  .live{ display:flex; align-items:center; gap:10px; background:#c8102e; color:#fff; padding:.35em .8em; border-radius:6px; font-size:clamp(14px,1.5vw,20px); letter-spacing:.12em; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+  .live .dot{ width:.7em; height:.7em; border-radius:50%; background:#fff; animation:blink 1.1s steps(1) infinite; }
+  .live .t{ font-family:"Helvetica Neue",Arial; font-weight:700; font-variant-numeric:tabular-nums; }
+  @keyframes blink{ 50%{ opacity:.15; } }
+
+  /* ---------- MIDTEN ---------- */
+  .center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:4; padding-bottom:8vh; }
+  .headline{ text-align:center; line-height:.92; text-shadow:0 4px 0 rgba(255,255,255,.25), 0 8px 24px rgba(0,0,0,.18); margin-bottom:clamp(10px,2vh,30px); }
+  .headline .small{ display:block; font-size:clamp(26px,4.4vw,64px); color:var(--moerk); }
+  .headline .big{ display:block; font-size:clamp(54px,10vw,150px); color:#16100a; letter-spacing:.02em; }
+
+  .clock-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .clock-label{ font-size:clamp(13px,1.4vw,20px); letter-spacing:.35em; color:rgba(30,20,0,.7); }
+  .clock{
+    font-variant-numeric:tabular-nums; font-size:clamp(80px,17vw,260px); line-height:1; color:#140d04;
+    background:rgba(255,255,255,.18); border:.12em solid rgba(20,12,0,.65); border-radius:.14em;
+    padding:.05em .22em .08em;
+    box-shadow:0 12px 40px rgba(0,0,0,.28), inset 0 0 40px rgba(255,255,255,.25);
+    text-shadow:0 3px 0 rgba(255,255,255,.3), 0 0 24px rgba(255,255,255,.35);
+    transition:color .3s, border-color .3s, background .3s;
+  }
+  .clock.warn{ color:#a80016; border-color:#a80016; text-shadow:0 0 28px rgba(255,40,40,.8); animation:pulse .9s ease-in-out infinite; }
+  .clock.done{ color:#a80016; border-color:#a80016; background:rgba(168,0,22,.12); }
+  @keyframes pulse{ 50%{ transform:scale(1.04); } }
+
+  /* skjelv siste sekunder */
+  .scene.shake{ animation:shake .12s linear infinite; }
+  @keyframes shake{ 0%{transform:translate(0,0)} 25%{transform:translate(-3px,2px)} 50%{transform:translate(3px,-2px)} 75%{transform:translate(-2px,-3px)} 100%{transform:translate(2px,3px)} }
+
+  /* ---------- TWEET-TICKER ---------- */
+  .ticker{ position:absolute; left:0; right:0; bottom:0; z-index:6; background:linear-gradient(180deg, rgba(10,7,0,0), rgba(10,7,0,.92) 35%); padding-top:30px; }
+  .ticker-bar{ display:flex; align-items:stretch; background:#0a0a0a; border-top:3px solid var(--gul); }
+  .ticker-tag{ flex:0 0 auto; display:flex; align-items:center; gap:10px; background:var(--gul); color:#111; font-size:clamp(14px,1.5vw,20px); letter-spacing:.12em; padding:0 clamp(14px,1.6vw,26px); white-space:nowrap; z-index:2; box-shadow:6px 0 14px rgba(0,0,0,.45); }
+  .ticker-tag .x{ font-style:italic; font-weight:900; background:#111; color:#fff; width:1.5em; height:1.5em; border-radius:5px; display:grid; place-items:center; }
+  .ticker-view{ overflow:hidden; flex:1 1 auto; }
+  .ticker-track{ display:inline-flex; align-items:center; white-space:nowrap; padding:14px 0; animation:scroll var(--ticker-dur,60s) linear infinite; will-change:transform; }
+  .ticker:hover .ticker-track{ animation-play-state:paused; }
+  @keyframes scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .tweet{ display:inline-flex; align-items:center; gap:12px; color:#f3f3f3; font-family:"Helvetica Neue",Arial,sans-serif; font-size:clamp(15px,1.5vw,21px); padding:0 clamp(22px,2.5vw,46px); border-right:1px solid rgba(255,255,255,.12); }
+  .tweet .av{ flex:0 0 auto; width:1.9em; height:1.9em; border-radius:50%; display:grid; place-items:center; font-weight:900; color:#fff; font-size:.8em; font-family:"Arial Black",sans-serif; }
+  .tweet .handle{ font-weight:800; color:#fff; }
+  .tweet .check{ color:#1d9bf0; margin-left:-6px; }
+  .tweet .src{ font-size:.78em; opacity:.65; margin-left:6px; }
+  .tweet .txt{ font-weight:500; opacity:.95; }
+
+  /* ---------- BREAKING-BANNER ---------- */
+  .breaking{
+    position:absolute; left:0; right:0; bottom:16vh; z-index:9;
+    display:flex; align-items:center; gap:0;
+    transform:translateY(160%); transition:transform .5s cubic-bezier(.2,1.2,.3,1);
+    filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));
+  }
+  .breaking.show{ transform:translateY(0); }
+  .breaking .lab{ background:#c8102e; color:#fff; font-size:clamp(16px,1.9vw,28px); letter-spacing:.08em; padding:.5em 1em; white-space:nowrap; animation:flashbg 1s steps(1) infinite; }
+  @keyframes flashbg{ 50%{ background:#8a0010; } }
+  .breaking .msg{ background:var(--gul); color:#111; font-size:clamp(16px,1.9vw,28px); padding:.5em 1.2em; flex:1 1 auto; font-family:"Helvetica Neue",Arial,sans-serif; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---------- FIFA-SPILLERKORT ---------- */
+  .card-stage{ position:absolute; inset:0; z-index:15; display:grid; place-items:center; pointer-events:none; }
+  .card{
+    width:min(34vw,360px); aspect-ratio:3/4.4; pointer-events:auto;
+    background:linear-gradient(160deg,#fff1b0 0%,#ffd34d 30%,#e8a200 70%,#b87400 100%);
+    border-radius:18px; color:#2a1c00;
+    box-shadow:0 30px 70px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.35);
+    padding:5% 6%; transform:translateY(40px) scale(.6) rotateY(40deg); opacity:0;
+    transition:transform .6s cubic-bezier(.2,1.3,.3,1), opacity .5s;
+    position:relative; overflow:hidden;
+  }
+  .card.show{ transform:translateY(0) scale(1) rotateY(0); opacity:1; }
+  .card::after{ content:""; position:absolute; top:-60%; left:-30%; width:60%; height:220%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent); transform:rotate(20deg); animation:shine 3.5s ease-in-out infinite; }
+  @keyframes shine{ 0%,100%{ left:-40%; } 50%{ left:120%; } }
+  .card .top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .card .ovr{ text-align:center; line-height:.95; }
+  .card .ovr b{ font-size:clamp(30px,4vw,52px); display:block; }
+  .card .ovr span{ font-size:clamp(13px,1.5vw,18px); letter-spacing:.1em; }
+  .card .face{ width:46%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle at 50% 35%,#fff,#cfa64a); display:grid; place-items:center; font-size:clamp(34px,5vw,64px); box-shadow:inset 0 0 0 3px rgba(255,255,255,.5); }
+  .card .name{ text-align:center; font-size:clamp(22px,3vw,40px); border-bottom:3px solid rgba(42,28,0,.35); padding-bottom:.15em; margin:.35em 0 .5em; letter-spacing:.02em; }
+  .card .stats{ display:grid; grid-template-columns:1fr 1fr; gap:.15em 1.2em; font-family:"Helvetica Neue",Arial,sans-serif; font-weight:800; font-size:clamp(14px,1.6vw,20px); }
+  .card .stats div{ display:flex; justify-content:space-between; border-bottom:1px dotted rgba(42,28,0,.3); padding:.18em 0; }
+  .card .stats b{ font-family:"Arial Black"; }
+  .card .fee{ margin-top:.7em; text-align:center; font-family:"Helvetica Neue",Arial,sans-serif; font-weight:800; font-size:clamp(12px,1.4vw,17px); background:rgba(42,28,0,.85); color:var(--gul); border-radius:8px; padding:.45em .6em; }
+
+  /* ---------- DONE DEAL-FINALE ---------- */
+  #confetti{ position:absolute; inset:0; z-index:30; pointer-events:none; display:none; }
+  .done-overlay{
+    position:absolute; inset:0; z-index:25; display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:2vh;
+    background:radial-gradient(circle at 50% 40%, rgba(0,80,30,.55), rgba(0,20,10,.9));
+  }
+  .done-overlay.show{ display:flex; animation:fadein .4s ease; }
+  @keyframes fadein{ from{ opacity:0; } to{ opacity:1; } }
+  .done-overlay .tick{ font-size:clamp(80px,16vw,200px); animation:pop .6s cubic-bezier(.2,1.5,.3,1); }
+  @keyframes pop{ 0%{ transform:scale(0) rotate(-30deg); } 100%{ transform:scale(1) rotate(0); } }
+  .done-overlay h1{ color:#fff; font-size:clamp(40px,8vw,120px); line-height:.95; text-shadow:0 6px 30px rgba(0,0,0,.6); }
+  .done-overlay h1 span{ color:#7CFC9A; }
+  .done-overlay p{ color:#ffe; font-family:"Helvetica Neue",Arial; font-weight:700; font-size:clamp(16px,2.4vw,32px); opacity:.95; }
+  .done-overlay .hint{ font-size:clamp(12px,1.4vw,16px); opacity:.6; margin-top:2vh; }
+
+  /* ---------- HJELP ---------- */
+  .help{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,7,0,.88); color:#fff; font-family:"Helvetica Neue",Arial,sans-serif; padding:26px 34px; border-radius:14px; z-index:40; text-align:center; line-height:1.9; max-width:560px; box-shadow:0 20px 60px rgba(0,0,0,.5); transition:opacity .4s; }
+  .help h2{ font-size:22px; margin-bottom:12px; }
+  .help kbd{ background:#fff; color:#111; border-radius:5px; padding:1px 8px; font-family:monospace; font-weight:700; margin:0 2px; display:inline-block; }
+  .help small{ display:block; margin-top:14px; opacity:.7; font-size:13px; }
+  .help.hidden{ opacity:0; pointer-events:none; }
+
+  /* lyd-indikator */
+  .mute{ position:absolute; bottom:calc(16vh + 60px); right:24px; z-index:12; background:rgba(10,7,0,.7); color:#fff; font-family:"Helvetica Neue",Arial; font-size:13px; padding:6px 12px; border-radius:20px; opacity:.5; transition:opacity .3s; }
+</style>
+</head>
+<body>
+  <div class="scene" id="scene">
+    <div class="chevrons"></div>
+
+    <div class="topbar">
+      <div class="logo"><span class="sky">sky</span><span class="sport">sports</span></div>
+      <div class="live"><span class="dot"></span> LIVE <span class="t" id="liveclock"></span></div>
+    </div>
+
+    <div class="center">
+      <div class="headline">
+        <span class="small">Overgangsvindu</span>
+        <span class="big">ÅPENT</span>
+      </div>
+      <div class="clock-wrap">
+        <div class="clock-label">DEADLINE DAY</div>
+        <div class="clock" id="clock">10:00</div>
+      </div>
+    </div>
+
+    <!-- BREAKING -->
+    <div class="breaking" id="breaking">
+      <div class="lab">⚡ BREAKING</div>
+      <div class="msg" id="breaking-msg"></div>
+    </div>
+
+    <!-- SPILLERKORT -->
+    <div class="card-stage">
+      <div class="card" id="card">
+        <div class="top">
+          <div class="ovr"><b id="c-ovr">99</b><span id="c-pos">EKT</span></div>
+          <div class="face" id="c-face">🤵</div>
+        </div>
+        <div class="name" id="c-name">JONAS</div>
+        <div class="stats" id="c-stats"></div>
+        <div class="fee" id="c-fee"></div>
+      </div>
+    </div>
+
+    <!-- TICKER -->
+    <div class="ticker">
+      <div class="ticker-bar">
+        <div class="ticker-tag"><span class="x">𝕏</span> OVERGANGSNYTT</div>
+        <div class="ticker-view"><div class="ticker-track" id="track"></div></div>
+      </div>
+    </div>
+
+    <div class="mute" id="mute">🔊 Lyd på (M)</div>
+
+    <!-- DONE DEAL -->
+    <canvas id="confetti"></canvas>
+    <div class="done-overlay" id="done">
+      <div class="tick">✅</div>
+      <h1>DONE <span>DEAL!</span></h1>
+      <p id="done-sub">Jonas har signert for Eirin United 💍</p>
+      <div class="hint">Trykk <b>Esc</b> for å lukke</div>
+    </div>
+
+    <!-- HJELP -->
+    <div class="help" id="help">
+      <h2>🎙️ Overgangsvindu – studio</h2>
+      <div>
+        <kbd>Mellomrom</kbd> start/pause · <kbd>R</kbd> nullstill · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 min<br>
+        <kbd>B</kbd> breaking · <kbd>C</kbd> spillerkort · <kbd>D</kbd> DONE DEAL · <kbd>M</kbd> lyd · <kbd>F</kbd> fullskjerm
+      </div>
+      <small>Forsvinner automatisk. Trykk <kbd>H</kbd> for å vise igjen.</small>
+    </div>
+  </div>
+
+<script>
+  /* ====== INNSTILLINGER ====== */
+  const START_MINUTES = 10;
+  let   autostart     = false;
+
+  /* ====== TWEETS (nyhetsbåndet) ====== */
+  const TWEETS = [
+    {h:"@FabrizioRomano", v:true,  c:"#1d9bf0", src:"⭐⭐⭐⭐⭐", t:"🚨 HER ER DEN! Jonas → Eirin, here we go! ✅ Kontrakt signert til år 2096 (livsvarig). Medisinsk sjekk bestått. #11Juli"},
+    {h:"@OvergangsEksperten", v:false, c:"#e2002a", src:"ifølge svigermor", t:"Forstår at Eirin United har vunnet kampen om Jonas etter flere års forhandlinger. Klubbene er enige – ringen er personlig vilkår. 💍"},
+    {h:"@SkySportsNews", v:true, c:"#0a3aff", src:"⭐⭐⭐⭐", t:"OFFISIELT: Jonas forlater Ungkar FC på gratis overgang. Ingen tilbakekjøpsklausul i kontrakten. 🤵"},
+    {h:"@RyktebørsenNO", v:false, c:"#ff8a00", src:"⭐⭐", t:"Kilder: Jonas har bestått den medisinske. Eneste bekymring fra teamet – formen på dansegulvet etter kl. 22:00. 🕺"},
+    {h:"@ToastmasterTV", v:true, c:"#16a34a", src:"offisiell kanal", t:"Espen & Fredrik bekrefter pressekonferanse på Høymagasinet kl. 14:30. Bobler garantert til de frammøtte. 🥂"},
+    {h:"@DeadlineDayNO", v:false, c:"#7c3aed", src:"⭐⭐⭐", t:"BREAKING: Avsløringen skjer i Gamle Aker kirke kl. 13:00. Begge leire ventes til stede. Full enighet. 🔔"},
+    {h:"@LønnsLekkasjen", v:false, c:"#0891b2", src:"⭐", t:"Lønnsdetaljer: ubegrenset kjærlighet + 50 % av fjernkontrollen. Bonus utbetales ved oppvask. 😅"},
+    {h:"@FotballPåBryllup", v:true, c:"#db2777", src:"⭐⭐⭐⭐", t:"Eirin om signeringen: «Vi har fulgt ham lenge. Han passer perfekt inn i systemet vårt.» ❤️"},
+    {h:"@SupporterUnionFC", v:false, c:"#475569", src:"fanside", t:"Ungkar FC-fansen i sjokk: nøkkelspilleren borte før sesongstart. Klubben henter ingen erstatter. 😭"},
+    {h:"@TaktikkProffen", v:false, c:"#ca8a04", src:"⭐⭐", t:"Analyse: Jonas ventes i en mer defensiv rolle hjemme, men med full frihet til å angripe grillen i helgene. 🔥"},
+  ];
+
+  /* ====== BREAKING-overskrifter ====== */
+  const BREAKINGS = [
+    "Jonas til legesjekk – bestått! Klar for presentasjon i Gamle Aker kirke ✅",
+    "Eirin United bekrefter: personlige vilkår avtalt. Kun signaturen gjenstår ✍️",
+    "Toppkilde: Jonas har takket nei til alle andre tilbud – «hun er den eneste» 💘",
+    "Forloverne i hektisk møte – ryktes å forberede et innslag ingen glemmer 🎤",
+    "Dansegulvet meldes klart kl. 22:00. Eksperter advarer mot Jonas' moves 🕺",
+    "Ungkar FC senker flagget på halv stang. En æra er over 🏳️",
+    "Bryllupsreisen: destinasjon hemmeligholdt. Spekulasjonene går varme ✈️",
+  ];
+
+  /* ====== SPILLERKORT ====== */
+  const JONAS_CARD = {
+    ovr:"99", pos:"EKT", face:"🤵", name:"JONAS",
+    stats:[ ["LOJ","99"], ["KJÆ","99"], ["DAN","67"], ["OPP","42"], ["GRI","95"], ["ROM","88"] ],
+    fee:"💰 Verdi: 1 livslangt JA + 2 katter"
+  };
+
+  /* ================= LYDMOTOR (Web Audio, ingen filer) ================= */
+  let actx=null, muted=false;
+  function ac(){ if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==="suspended") actx.resume(); return actx; }
+  function beep(freq=880, dur=.12, type="sine", gain=.25, delay=0){
+    if(muted) return;
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(c.destination);
+    const t=c.currentTime+delay;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(gain,t+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.start(t); o.stop(t+dur+.02);
+  }
+  const sndDing  =()=>{ beep(1318,.10,"triangle",.3); beep(1760,.18,"triangle",.28,.09); };
+  const sndCount =()=>beep(740,.09,"square",.2);
+  const sndHorn  =()=>{ [220,277,330].forEach((f,i)=>beep(f,1.2,"sawtooth",.18,i*.02)); beep(110,1.3,"sawtooth",.14); };
+  const sndPop   =()=>beep(520+Math.random()*400,.07,"square",.12);
+
+  /* ================= TICKER ================= */
+  function tweetEl(tw){
+    const i=tw.h.replace("@","").slice(0,2).toUpperCase();
+    return `<span class="tweet">
+      <span class="av" style="background:${tw.c}">${i}</span>
+      <span class="handle">${tw.h}</span>${tw.v?'<span class="check">✔</span>':''}
+      ${tw.src?`<span class="src">${tw.src}</span>`:''}
+      <span class="txt">${tw.t}</span></span>`;
+  }
+  const tHtml = TWEETS.map(tweetEl).join("");
+  document.getElementById("track").innerHTML = tHtml + tHtml;
+
+  /* ================= SPILLERKORT ================= */
+  (function(){
+    document.getElementById("c-ovr").textContent=JONAS_CARD.ovr;
+    document.getElementById("c-pos").textContent=JONAS_CARD.pos;
+    document.getElementById("c-face").textContent=JONAS_CARD.face;
+    document.getElementById("c-name").textContent=JONAS_CARD.name;
+    document.getElementById("c-fee").textContent=JONAS_CARD.fee;
+    document.getElementById("c-stats").innerHTML=
+      JONAS_CARD.stats.map(s=>`<div><span>${s[0]}</span><b>${s[1]}</b></div>`).join("");
+  })();
+  const card=document.getElementById("card");
+  function toggleCard(){
+    const on=card.classList.toggle("show");
+    if(on) sndDing();
+  }
+
+  /* ================= KLOKKE ================= */
+  const clock=document.getElementById("clock"), scene=document.getElementById("scene"), track=document.getElementById("track");
+  let total=START_MINUTES*60, remaining=total, timer=null;
+  const fired={};
+  function fmt(s){ const m=Math.floor(s/60), x=s%60; return String(m).padStart(2,"0")+":"+String(x).padStart(2,"0"); }
+  function tickerSpeed(){
+    let d=60;
+    if(remaining<=60) d=38;
+    if(remaining<=30) d=24;
+    if(remaining<=10) d=14;
+    track.style.setProperty("--ticker-dur", d+"s");
+  }
+  function render(){
+    clock.textContent = remaining===0 ? "FULL TID" : fmt(remaining);
+    clock.classList.toggle("warn", remaining<=60 && remaining>0);
+    clock.classList.toggle("done", remaining===0);
+    scene.classList.toggle("shake", remaining<=10 && remaining>0 && !!timer);
+    tickerSpeed();
+  }
+  function tick(){
+    if(remaining>0){
+      remaining--;
+      // deadline-dramatikk
+      if([30,20,10].includes(remaining)) showBreaking();
+      if(remaining<=10 && remaining>0) sndCount();
+      render();
+      if(remaining===0){ stop(); doneDeal(); }
+    }
+  }
+  function start(){ ac(); if(!timer){ timer=setInterval(tick,1000); } }
+  function stop(){ clearInterval(timer); timer=null; render(); }
+  function toggle(){ timer?stop():start(); }
+  function reset(){ stop(); remaining=total; render(); }
+  function addMin(n){ remaining=Math.max(0,remaining+n*60); total=Math.max(total,remaining); render(); }
+
+  /* ================= BREAKING ================= */
+  const bEl=document.getElementById("breaking"), bMsg=document.getElementById("breaking-msg");
+  let bIdx=0, bHide=null;
+  function showBreaking(txt){
+    bMsg.textContent = txt || BREAKINGS[bIdx++ % BREAKINGS.length];
+    bEl.classList.add("show"); sndDing();
+    clearTimeout(bHide);
+    bHide=setTimeout(()=>bEl.classList.remove("show"), 6500);
+  }
+
+  /* ================= DONE DEAL + KONFETTI ================= */
+  const done=document.getElementById("done"), cv=document.getElementById("confetti"), ctx=cv.getContext("2d");
+  let parts=[], raf=null;
+  function sizeCanvas(){ cv.width=innerWidth; cv.height=innerHeight; }
+  addEventListener("resize", sizeCanvas); sizeCanvas();
+  const COLORS=["#ffd000","#ff8a00","#e2002a","#0a3aff","#16a34a","#ffffff","#7CFC9A"];
+  function burst(n){
+    for(let i=0;i<n;i++){
+      parts.push({
+        x:innerWidth*(.2+Math.random()*.6), y:innerHeight*.5,
+        vx:(Math.random()-.5)*16, vy:-(8+Math.random()*12),
+        g:.35+Math.random()*.2, s:6+Math.random()*8,
+        rot:Math.random()*6, vr:(Math.random()-.5)*.4,
+        col:COLORS[(Math.random()*COLORS.length)|0]
+      });
+    }
+  }
+  function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vx*=.99;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.col; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore();
+    });
+    parts=parts.filter(p=>p.y<cv.height+40);
+    if(parts.length){ raf=requestAnimationFrame(loop); }
+    else { raf=null; cv.style.display="none"; }
+  }
+  function doneDeal(){
+    done.classList.add("show");
+    cv.style.display="block";
+    sndHorn();
+    let shots=0;
+    const fire=()=>{ burst(80); for(let k=0;k<8;k++) setTimeout(sndPop,k*40); if(++shots<5) setTimeout(fire,400); };
+    fire();
+    if(!raf) loop();
+  }
+  function closeDone(){ done.classList.remove("show"); }
+
+  /* ================= LIVE-KLOKKE ØVERST ================= */
+  const liveClock=document.getElementById("liveclock");
+  setInterval(()=>{ const d=new Date(); liveClock.textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }, 1000);
+  liveClock.textContent="";
+
+  /* ================= MUTE ================= */
+  const muteEl=document.getElementById("mute");
+  function toggleMute(){ muted=!muted; muteEl.textContent=muted?"🔇 Lyd av (M)":"🔊 Lyd på (M)"; muteEl.style.opacity=muted?1:.5; }
+
+  /* ================= HJELP ================= */
+  const help=document.getElementById("help");
+  let helpTimer=setTimeout(()=>help.classList.add("hidden"),7000);
+  function flashHelp(){ help.classList.toggle("hidden"); clearTimeout(helpTimer); if(!help.classList.contains("hidden")) helpTimer=setTimeout(()=>help.classList.add("hidden"),7000); }
+
+  /* ================= TASTATUR ================= */
+  document.addEventListener("keydown", e=>{
+    switch(e.key){
+      case " ": e.preventDefault(); toggle(); break;
+      case "r": case "R": reset(); break;
+      case "ArrowUp": addMin(1); break;
+      case "ArrowDown": addMin(-1); break;
+      case "b": case "B": showBreaking(); break;
+      case "c": case "C": toggleCard(); break;
+      case "d": case "D": doneDeal(); break;
+      case "m": case "M": toggleMute(); break;
+      case "h": case "H": flashHelp(); break;
+      case "Escape": closeDone(); card.classList.remove("show"); break;
+      case "f": case "F":
+        if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+        break;
+    }
+  });
+  // klikk i scenen = start/pause (men ikke når overlay/ticker er aktiv)
+  scene.addEventListener("click", e=>{
+    if(e.target.closest(".ticker")||e.target.closest(".done-overlay")||e.target.closest(".card")) return;
+    ac(); toggle();
+  });
+
+  render();
+  if(autostart) start();
+</script>
+</body>
+</html>
