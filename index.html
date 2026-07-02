@@ -127,7 +127,7 @@
   .breaking{
     position:absolute; left:0; right:0; bottom:16vh; z-index:9;
     display:flex; align-items:center; gap:0;
-    transform:translateY(160%); transition:transform .5s cubic-bezier(.2,1.2,.3,1);
+    transform:translateY(calc(16vh + 120%)); transition:transform .5s cubic-bezier(.2,1.2,.3,1);
     filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));
   }
   .breaking.show{ transform:translateY(0); }
@@ -200,6 +200,96 @@
 
   /* lyd-indikator */
   .mute{ position:absolute; bottom:calc(16vh + 60px); right:24px; z-index:12; background:rgba(10,7,0,.7); color:#fff; font-family:"Helvetica Neue",Arial; font-size:13px; padding:6px 12px; border-radius:20px; opacity:.5; transition:opacity .3s; }
+
+  /* ---------- VENTEBILDE (før sending) ---------- */
+  .standby{
+    position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(120% 100% at 50% 18%, #14285f 0%, #0a1637 55%, #04091c 100%);
+    color:#fff; transition:opacity .6s; cursor:pointer;
+  }
+  .standby::before{ /* svakt rutenett */
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+    background-size:46px 46px;
+    -webkit-mask-image:radial-gradient(85% 75% at 50% 40%, #000 30%, transparent 100%);
+            mask-image:radial-gradient(85% 75% at 50% 40%, #000 30%, transparent 100%);
+  }
+  .standby::after{ /* scanlines */
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 2px, transparent 2px 5px);
+  }
+  .standby.gone{ opacity:0; pointer-events:none; }
+  .sb-inner{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:2.4vh; text-align:center; padding:0 6vw 11vh; max-width:100vw; }
+  .sb-kicker,.sb-title{ max-width:88vw; }
+  .sb-logo .sky,.sb-logo .sport{ font-size:clamp(36px,5.4vw,68px); }
+  .sb-kicker{ font-size:clamp(12px,1.6vw,20px); letter-spacing:.32em; color:var(--gul); }
+  .sb-title{ font-size:clamp(28px,5.4vw,74px); line-height:1.06; text-shadow:0 6px 24px rgba(0,0,0,.5); animation:sbpulse 2.6s ease-in-out infinite; }
+  @keyframes sbpulse{ 50%{ opacity:.55; } }
+  .sb-clock{ font-variant-numeric:tabular-nums; font-size:clamp(24px,3.2vw,46px); background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.25); border-radius:10px; padding:.2em .6em; letter-spacing:.06em; }
+  .sb-start{
+    font-family:inherit; font-size:clamp(16px,2vw,26px); letter-spacing:.08em; cursor:pointer;
+    background:#c8102e; color:#fff; border:0; border-radius:10px; padding:.7em 1.6em;
+    box-shadow:0 10px 30px rgba(200,16,46,.45); transition:transform .15s, box-shadow .15s;
+  }
+  .sb-start:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 14px 36px rgba(200,16,46,.6); }
+  .sb-hints{ font-family:"Helvetica Neue",Arial,sans-serif; font-weight:600; font-size:clamp(11px,1.3vw,15px); opacity:.65; line-height:1.9; }
+  .sb-hints kbd{ background:#fff; color:#111; border-radius:4px; padding:0 6px; font-family:monospace; }
+  .sb-bars{ position:absolute; left:0; right:0; bottom:0; height:9vh; display:flex; z-index:1; opacity:.8; }
+  .sb-bars i{ flex:1; }
+  .sb-bars i:nth-child(1){ background:#c0c0c0; } .sb-bars i:nth-child(2){ background:#c0c000; }
+  .sb-bars i:nth-child(3){ background:#00c0c0; } .sb-bars i:nth-child(4){ background:#00c000; }
+  .sb-bars i:nth-child(5){ background:#c000c0; } .sb-bars i:nth-child(6){ background:#c00000; }
+  .sb-bars i:nth-child(7){ background:#0000c0; }
+
+  /* ---------- VIGNETT (sendestart-animasjon) ---------- */
+  .vignette{ position:fixed; inset:0; z-index:70; background:#000; display:none; overflow:hidden; transition:opacity .6s; }
+  .vignette.play{ display:block; }
+  .vignette.gone{ opacity:0; pointer-events:none; }
+  .vg-bg{
+    position:absolute; inset:0;
+    background:linear-gradient(135deg, #fff3a0 0%, var(--gul) 22%, var(--oransje) 62%, var(--dyporansje) 100%);
+    clip-path:circle(0% at 50% 50%);
+  }
+  .vg-bg::after{ content:""; position:absolute; inset:-20%;
+    background-image:repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 2px, transparent 2px 70px);
+    animation:slide 5s linear infinite; }
+  .vignette.play .vg-bg{ animation:vgbg .7s cubic-bezier(.2,.8,.3,1) 2.2s forwards; }
+  @keyframes vgbg{ to{ clip-path:circle(150% at 50% 50%); } }
+  .vg-streak{ position:absolute; top:0; bottom:0; left:-30%; width:18%; transform:skewX(-18deg);
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent); opacity:0; }
+  .vignette.play .vg-streak{ animation:vgstreak .9s ease-in .1s forwards; }
+  @keyframes vgstreak{ 0%{ left:-30%; opacity:0; } 15%{ opacity:1; } 100%{ left:120%; opacity:0; } }
+  .vg-rings{ position:absolute; inset:0; display:grid; place-items:center; }
+  .vg-rings i{ position:absolute; width:26vmin; height:26vmin; border:3px solid var(--gul); border-radius:50%; opacity:0; }
+  .vignette.play .vg-rings i{ animation:vgring 1.6s cubic-bezier(.2,.7,.3,1) forwards; }
+  .vignette.play .vg-rings i:nth-child(1){ animation-delay:.35s; }
+  .vignette.play .vg-rings i:nth-child(2){ animation-delay:.6s; border-color:#fff; }
+  .vignette.play .vg-rings i:nth-child(3){ animation-delay:.85s; border-color:var(--oransje); }
+  @keyframes vgring{ 0%{ transform:scale(.2); opacity:0; } 20%{ opacity:.9; } 100%{ transform:scale(4.2); opacity:0; } }
+  .vg-logo{ position:absolute; inset:0; justify-content:center; opacity:0; }
+  .vg-logo .sky,.vg-logo .sport{ font-size:clamp(44px,8vw,110px); }
+  .vignette.play .vg-logo{ animation:vglogo 1.7s cubic-bezier(.2,1.4,.3,1) .8s forwards; }
+  @keyframes vglogo{ 0%{ opacity:0; transform:scale(.4); } 18%{ opacity:1; transform:scale(1.06); } 30%{ transform:scale(1); } 80%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.3); } }
+  .vg-words{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:6vh; }
+  .vg-words .w1{ font-size:clamp(40px,9vw,120px); color:#16100a; letter-spacing:.02em; opacity:0; text-shadow:0 4px 0 rgba(255,255,255,.25), 0 10px 30px rgba(0,0,0,.25); }
+  .vg-words .w2{ font-size:clamp(70px,16vw,220px); line-height:.9; color:#16100a; opacity:0; text-shadow:0 5px 0 rgba(255,255,255,.3), 0 14px 40px rgba(0,0,0,.3); }
+  .vignette.play .w1{ animation:vgw1 .45s cubic-bezier(.2,1.1,.3,1) 2.7s forwards; }
+  @keyframes vgw1{ 0%{ opacity:0; transform:translateX(-90vw); } 60%{ opacity:1; transform:translateX(3vw); } 100%{ opacity:1; transform:translateX(0); } }
+  .vignette.play .w2{ animation:vgw2 .5s cubic-bezier(.25,1.6,.35,1) 3.5s forwards; }
+  @keyframes vgw2{ 0%{ opacity:0; transform:scale(3.2); } 55%{ opacity:1; transform:scale(.94); } 100%{ opacity:1; transform:scale(1); } }
+  .vignette.play .vg-words{ animation:vgshake .3s linear 3.7s; }
+  @keyframes vgshake{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-8px,5px); } 50%{ transform:translate(7px,-5px); } 75%{ transform:translate(-5px,-4px); } }
+  .vg-sub{ position:absolute; left:0; right:0; bottom:24vh; text-align:center; font-size:clamp(15px,2.2vw,30px); letter-spacing:.28em; color:#2a1c00; opacity:0; }
+  .vignette.play .vg-sub{ animation:vgsub .6s ease 4.5s forwards; }
+  @keyframes vgsub{ 0%{ opacity:0; transform:translateY(24px); } 100%{ opacity:1; transform:translateY(0); } }
+  .vg-direkte{ position:absolute; top:7vh; left:50%; transform:translateX(-50%) scale(0); background:#c8102e; color:#fff; font-size:clamp(20px,3vw,42px); letter-spacing:.14em; padding:.35em .9em; border-radius:8px; box-shadow:0 10px 34px rgba(0,0,0,.4); }
+  .vignette.play .vg-direkte{ animation:vgdir .45s cubic-bezier(.25,1.7,.35,1) 5.6s forwards, flashbg 1s steps(1) 6.05s infinite; }
+  @keyframes vgdir{ 0%{ transform:translateX(-50%) scale(0) rotate(-6deg); } 70%{ transform:translateX(-50%) scale(1.15) rotate(1deg); } 100%{ transform:translateX(-50%) scale(1); } }
+  .vg-flash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+  .vignette.play .vg-flash{ animation:vgflash1 .35s ease 3.5s, vgflash2 .6s ease 5.6s; }
+  @keyframes vgflash1{ 0%{ opacity:.55; } 100%{ opacity:0; } }
+  @keyframes vgflash2{ 0%{ opacity:.95; } 100%{ opacity:0; } }
 </style>
 </head>
 <body>
@@ -267,7 +357,7 @@
     </div>
 
     <!-- HJELP -->
-    <div class="help" id="help">
+    <div class="help hidden" id="help">
       <h2>🎙️ Overgangsvindu – studio</h2>
       <div>
         <kbd>Mellomrom</kbd> start/pause · <kbd>R</kbd> nullstill · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 min<br>
@@ -275,6 +365,37 @@
       </div>
       <small>Forsvinner automatisk. Trykk <kbd>H</kbd> for å vise igjen.</small>
     </div>
+  </div>
+
+  <!-- VENTEBILDE -->
+  <div class="standby" id="standby">
+    <div class="sb-inner">
+      <div class="logo sb-logo"><span class="sky">sky</span><span class="sport">sports</span></div>
+      <div class="sb-kicker">DEADLINE DAY · 11. JULI 2026</div>
+      <h1 class="sb-title">SENDINGEN STARTER SNART</h1>
+      <div class="sb-clock" id="sb-clock">--:--:--</div>
+      <button class="sb-start" id="sb-start">▶ START SENDINGEN</button>
+      <div class="sb-hints">
+        <span id="sb-lyd">🔇 Klikk hvor som helst for ventemusikk</span><br>
+        <kbd>Enter</kbd> start sendingen · <kbd>F</kbd> fullskjerm · <kbd>M</kbd> lyd
+      </div>
+    </div>
+    <div class="sb-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- VIGNETT -->
+  <div class="vignette" id="vignette">
+    <div class="vg-bg"></div>
+    <div class="vg-streak"></div>
+    <div class="vg-rings"><i></i><i></i><i></i></div>
+    <div class="logo vg-logo"><span class="sky">sky</span><span class="sport">sports</span></div>
+    <div class="vg-words">
+      <span class="w1">DEADLINE</span>
+      <span class="w2">DAY</span>
+    </div>
+    <div class="vg-sub">JONAS &amp; EIRIN · 11. JULI 2026</div>
+    <div class="vg-direkte">● DIREKTE</div>
+    <div class="vg-flash"></div>
   </div>
 
 <script>
@@ -330,6 +451,121 @@
   const sndCount =()=>beep(740,.09,"square",.2);
   const sndHorn  =()=>{ [220,277,330].forEach((f,i)=>beep(f,1.2,"sawtooth",.18,i*.02)); beep(110,1.3,"sawtooth",.14); };
   const sndPop   =()=>beep(520+Math.random()*400,.07,"square",.12);
+
+  /* ================= MUSIKKMOTOR (Web Audio, ingen filer) ================= */
+  let musicMaster=null, loopGain=null, loopTimer=null, loopNext=0, loopBar=0, loopVol=0, vigGain=null;
+  function master(){
+    const c=ac();
+    if(!musicMaster){ musicMaster=c.createGain(); musicMaster.gain.value=muted?0:1; musicMaster.connect(c.destination); }
+    return musicMaster;
+  }
+  function mnote(f,t,dur,type,g,dest){
+    const c=ac(), o=c.createOscillator(), gn=c.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t);
+    o.connect(gn); gn.connect(dest||master());
+    gn.gain.setValueAtTime(0,t);
+    gn.gain.linearRampToValueAtTime(g,t+.03);
+    gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.start(t); o.stop(t+dur+.06);
+  }
+  function noiseB(t,dur,g,f1,f2,dest){
+    const c=ac(), len=Math.max(1,(dur*c.sampleRate)|0), buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    const s=c.createBufferSource(); s.buffer=buf;
+    const flt=c.createBiquadFilter(); flt.type="bandpass"; flt.Q.value=.9;
+    flt.frequency.setValueAtTime(f1,t); if(f2) flt.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    const gn=c.createGain(); gn.gain.setValueAtTime(g,t); gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    s.connect(flt); flt.connect(gn); gn.connect(dest||master());
+    s.start(t); s.stop(t+dur+.03);
+  }
+
+  /* Ventemusikk: myk hold-loop (Fmaj7 → G7 → Em7 → Am7) */
+  const HOLD_BPM=84, HBEAT=60/HOLD_BPM, HBAR=4*HBEAT;
+  const HOLD=[
+    {b:87.31,  p:[220,261.63,329.63],    m:[440,523.25,659.25,392]},
+    {b:98.00,  p:[246.94,293.66,349.23], m:[493.88,587.33,698.46,440]},
+    {b:82.41,  p:[196,246.94,293.66],    m:[392,493.88,587.33,659.25]},
+    {b:110.00, p:[196,261.63,329.63],    m:[440,523.25,659.25,392]},
+  ];
+  function holdBar(t,i){
+    const ch=HOLD[i%4];
+    mnote(ch.b,t,HBEAT*1.7,"sine",.22,loopGain);
+    mnote(ch.b*1.498,t+2*HBEAT,HBEAT*1.5,"sine",.15,loopGain);
+    ch.p.forEach(f=>mnote(f,t+.02,HBAR*.95,"sine",.05,loopGain));
+    if(Math.random()<.8) mnote(ch.m[(Math.random()*4)|0], t+HBEAT*(1+((Math.random()*2)|0)*.5), HBEAT*1.3,"triangle",.08,loopGain);
+    if(Math.random()<.45) mnote(ch.m[(Math.random()*4)|0], t+HBEAT*3, HBEAT*.9,"triangle",.06,loopGain);
+    noiseB(t+HBEAT,.06,.03,1800,0,loopGain);
+    noiseB(t+3*HBEAT,.06,.035,1800,0,loopGain);
+  }
+  function loopStart(vol,fade){
+    const c=ac(); master();
+    if(!loopGain){ loopGain=c.createGain(); loopGain.gain.value=0; loopGain.connect(musicMaster); }
+    loopVol=vol;
+    const g=loopGain.gain;
+    g.cancelScheduledValues(c.currentTime); g.setValueAtTime(g.value,c.currentTime);
+    g.linearRampToValueAtTime(vol,c.currentTime+(fade||1));
+    if(!loopTimer){
+      loopNext=c.currentTime+.1;
+      loopTimer=setInterval(()=>{
+        while(loopNext<ac().currentTime+1.3){ holdBar(loopNext,loopBar); loopNext+=HBAR; loopBar++; }
+      },300);
+    }
+  }
+  function loopFade(target,sec){
+    if(!loopGain) return; loopVol=target;
+    const c=ac(), g=loopGain.gain;
+    g.cancelScheduledValues(c.currentTime); g.setValueAtTime(g.value,c.currentTime);
+    g.linearRampToValueAtTime(Math.max(target,.0001),c.currentTime+sec);
+    if(target===0) setTimeout(()=>{ if(loopVol===0&&loopTimer){ clearInterval(loopTimer); loopTimer=null; } },sec*1000+150);
+  }
+
+  /* Vignettmusikk: pulserende sendestart, synket med animasjonen */
+  function stab(t,freqs,dur){
+    dur=dur||.42;
+    freqs.forEach(f=>{
+      mnote(f,t,dur,"sawtooth",.085,vigGain);
+      mnote(f*1.006,t,dur,"sawtooth",.065,vigGain);
+      mnote(f/2,t,dur,"square",.05,vigGain);
+    });
+  }
+  function timp(t){
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(45,t+.35);
+    o.connect(g); g.connect(vigGain);
+    g.gain.setValueAtTime(.55,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+    o.start(t); o.stop(t+.55);
+  }
+  function boom(t){
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(85,t); o.frequency.exponentialRampToValueAtTime(30,t+1.1);
+    o.connect(g); g.connect(vigGain);
+    g.gain.setValueAtTime(.9,t); g.gain.exponentialRampToValueAtTime(.001,t+1.3);
+    o.start(t); o.stop(t+1.4);
+  }
+  function playVignetteMusic(){
+    const c=ac(); master();
+    vigGain=c.createGain(); vigGain.gain.value=1; vigGain.connect(musicMaster);
+    const t0=c.currentTime+.08, b=60/132;
+    boom(t0);
+    for(let i=0;i<24;i++){
+      const t=t0+i*b/2; if(t>t0+5.5) break;
+      mnote(i%4===0?55:110, t, b*.32, "sawtooth", .10, vigGain);
+      noiseB(t,.05,i%2?.045:.028,6000,0,vigGain);
+    }
+    [0,1.15,2.3,3.5].forEach(x=>timp(t0+x));
+    stab(t0+2.7,[220,261.63,329.63]);
+    stab(t0+3.0,[174.61,220,261.63]);
+    stab(t0+3.5,[261.63,329.63,392],.6);
+    stab(t0+4.4,[196,246.94,293.66],.5);
+    noiseB(t0+4.3,1.3,.15,300,3200,vigGain);
+    boom(t0+5.6);
+    noiseB(t0+5.6,1.2,.2,6000,700,vigGain);
+    stab(t0+5.6,[220,277.18,329.63,440],1.7);
+  }
+  function toggleFullscreen(){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
 
   /* ================= TICKER ================= */
   function tweetEl(tw){
@@ -445,21 +681,39 @@
   function closeDone(){ done.classList.remove("show"); }
 
   /* ================= LIVE-KLOKKE ØVERST ================= */
-  const liveClock=document.getElementById("liveclock");
-  setInterval(()=>{ const d=new Date(); liveClock.textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }, 1000);
-  liveClock.textContent="";
+  const liveClock=document.getElementById("liveclock"), sbClock=document.getElementById("sb-clock");
+  function updClocks(){
+    const d=new Date(), hh=String(d.getHours()).padStart(2,"0"), mm=String(d.getMinutes()).padStart(2,"0"), ss=String(d.getSeconds()).padStart(2,"0");
+    liveClock.textContent=hh+":"+mm;
+    sbClock.textContent=hh+":"+mm+":"+ss;
+  }
+  setInterval(updClocks,1000); updClocks();
 
   /* ================= MUTE ================= */
   const muteEl=document.getElementById("mute");
-  function toggleMute(){ muted=!muted; muteEl.textContent=muted?"🔇 Lyd av (M)":"🔊 Lyd på (M)"; muteEl.style.opacity=muted?1:.5; }
+  function toggleMute(){
+    muted=!muted; muteEl.textContent=muted?"🔇 Lyd av (M)":"🔊 Lyd på (M)"; muteEl.style.opacity=muted?1:.5;
+    if(musicMaster){ const c=ac(); musicMaster.gain.cancelScheduledValues(c.currentTime); musicMaster.gain.setValueAtTime(muted?0:1,c.currentTime); }
+  }
 
   /* ================= HJELP ================= */
   const help=document.getElementById("help");
-  let helpTimer=setTimeout(()=>help.classList.add("hidden"),7000);
+  let helpTimer=null; /* vises først når sendingen er i gang */
   function flashHelp(){ help.classList.toggle("hidden"); clearTimeout(helpTimer); if(!help.classList.contains("hidden")) helpTimer=setTimeout(()=>help.classList.add("hidden"),7000); }
 
   /* ================= TASTATUR ================= */
   document.addEventListener("keydown", e=>{
+    if(state==="standby"){
+      if(e.key==="Enter"){ e.preventDefault(); startBroadcast(); return; }
+      if(e.key==="f"||e.key==="F"){ toggleFullscreen(); return; }
+      if(e.key==="m"||e.key==="M"){ toggleMute(); return; }
+      armAudio(); return;
+    }
+    if(state==="vignette"){
+      if(e.key==="Escape") skipVignette();
+      if(e.key==="m"||e.key==="M") toggleMute();
+      return;
+    }
     switch(e.key){
       case " ": e.preventDefault(); toggle(); break;
       case "r": case "R": reset(); break;
@@ -471,16 +725,50 @@
       case "m": case "M": toggleMute(); break;
       case "h": case "H": flashHelp(); break;
       case "Escape": closeDone(); card.classList.remove("show"); break;
-      case "f": case "F":
-        if(!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else document.exitFullscreen();
-        break;
+      case "f": case "F": toggleFullscreen(); break;
     }
   });
   // klikk i scenen = start/pause (men ikke når overlay/ticker er aktiv)
   scene.addEventListener("click", e=>{
     if(e.target.closest(".ticker")||e.target.closest(".done-overlay")||e.target.closest(".card")) return;
     ac(); toggle();
+  });
+
+  /* ================= SENDESTART (ventebilde → vignett → direkte) ================= */
+  let state="standby", goLiveTimer=null, audioArmed=false;
+  const standbyEl=document.getElementById("standby"), vignetteEl=document.getElementById("vignette");
+  function armAudio(){
+    if(audioArmed) return; audioArmed=true;
+    ac(); loopStart(.5,1.5);
+    document.getElementById("sb-lyd").textContent="🔊 Ventemusikk på";
+  }
+  function startBroadcast(){
+    if(state!=="standby") return;
+    state="vignette"; ac();
+    loopFade(0,.4);
+    standbyEl.classList.add("gone");
+    vignetteEl.classList.add("play");
+    playVignetteMusic();
+    goLiveTimer=setTimeout(goLive,7100);
+  }
+  function skipVignette(){
+    if(state!=="vignette") return;
+    if(vigGain){ const c=ac(); vigGain.gain.cancelScheduledValues(c.currentTime); vigGain.gain.setValueAtTime(.0001,c.currentTime); }
+    goLive();
+  }
+  function goLive(){
+    if(state==="live") return;
+    state="live"; clearTimeout(goLiveTimer);
+    vignetteEl.classList.add("gone");
+    setTimeout(()=>vignetteEl.classList.remove("play","gone"),700);
+    loopStart(.15,2.5); /* lav ventemusikk under innslaget */
+    help.classList.remove("hidden");
+    clearTimeout(helpTimer);
+    helpTimer=setTimeout(()=>help.classList.add("hidden"),8000);
+  }
+  standbyEl.addEventListener("click", e=>{
+    if(e.target.closest(".sb-start")){ startBroadcast(); return; }
+    armAudio();
   });
 
   render();
