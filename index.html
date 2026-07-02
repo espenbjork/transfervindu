@@ -242,54 +242,132 @@
   .sb-bars i:nth-child(5){ background:#c000c0; } .sb-bars i:nth-child(6){ background:#c00000; }
   .sb-bars i:nth-child(7){ background:#0000c0; }
 
-  /* ---------- VIGNETT (sendestart-animasjon) ---------- */
+  /* ---------- VIGNETT (sendestart-animasjon, ~9.5 s) ----------
+     Fase A 0–2.4s  : nedtelling 3-2-1 i kontrollrom
+     Fase B 2.45–3.6: tenning (braam, fartslinjer, streif, ringer, logo m/glitch)
+     Fase C 3.3–5.3 : panel-wipe, DEADLINE bokstav for bokstav, DAY-stempel
+     Fase D 5.3–7.2 : undertekst + bygg (riser, trommevirvel, sakte zoom)
+     Fase E 7.2–9.2 : DIREKTE-slam, sjokkring, blits, fade til studio */
   .vignette{ position:fixed; inset:0; z-index:70; background:#000; display:none; overflow:hidden; transition:opacity .6s; }
   .vignette.play{ display:block; }
   .vignette.gone{ opacity:0; pointer-events:none; }
-  .vg-bg{
-    position:absolute; inset:0;
-    background:linear-gradient(135deg, #fff3a0 0%, var(--gul) 22%, var(--oransje) 62%, var(--dyporansje) 100%);
-    clip-path:circle(0% at 50% 50%);
-  }
-  .vg-bg::after{ content:""; position:absolute; inset:-20%;
-    background-image:repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 2px, transparent 2px 70px);
-    animation:slide 5s linear infinite; }
-  .vignette.play .vg-bg{ animation:vgbg .7s cubic-bezier(.2,.8,.3,1) 2.2s forwards; }
-  @keyframes vgbg{ to{ clip-path:circle(150% at 50% 50%); } }
-  .vg-streak{ position:absolute; top:0; bottom:0; left:-30%; width:18%; transform:skewX(-18deg);
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent); opacity:0; }
-  .vignette.play .vg-streak{ animation:vgstreak .9s ease-in .1s forwards; }
+
+  /* fase A: nedtelling */
+  .vg-grid{ position:absolute; inset:0; opacity:.55; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size:46px 46px; }
+  .vignette.play .vg-grid{ animation:vggrid .35s linear 2.45s forwards; }
+  @keyframes vggrid{ to{ opacity:0; } }
+  .vg-count{ position:absolute; inset:0; display:grid; place-items:center; }
+  .vg-count b,.vg-count i{ grid-area:1/1; display:block; }
+  .vg-count b{ width:38vmin; height:38vmin; border:3px dashed rgba(255,255,255,.45); border-radius:50%; opacity:0; position:relative; }
+  .vg-count b::after{ content:""; position:absolute; inset:-5vmin; border:1px solid rgba(255,255,255,.2); border-radius:50%; }
+  .vignette.play .vg-count b{ animation:vgring360 .8s linear 3, vgcountfade 2.6s linear forwards; }
+  @keyframes vgring360{ from{ transform:rotate(0); } to{ transform:rotate(360deg); } }
+  @keyframes vgcountfade{ 0%{ opacity:0; } 6%{ opacity:1; } 88%{ opacity:1; } 100%{ opacity:0; } }
+  .vg-count i{ font-size:clamp(90px,20vmin,220px); font-style:normal; color:#fff; opacity:0; text-shadow:0 0 40px rgba(255,255,255,.4); }
+  .vignette.play .vg-count i.c3{ animation:vgnum .8s ease-out 0s forwards; }
+  .vignette.play .vg-count i.c2{ animation:vgnum .8s ease-out .8s forwards; }
+  .vignette.play .vg-count i.c1{ animation:vgnum .8s ease-out 1.6s forwards; color:var(--gul); }
+  @keyframes vgnum{ 0%{ opacity:0; transform:scale(1.8); } 18%{ opacity:1; } 70%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(.75); } }
+
+  /* fase B: tenning */
+  .vg-speed{ position:absolute; inset:-30%; opacity:0; pointer-events:none;
+    background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.55) 0deg .7deg, transparent .7deg 6deg);
+    -webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 16%, #000 58%);
+            mask-image:radial-gradient(circle at 50% 50%, transparent 16%, #000 58%); }
+  .vignette.play .vg-speed{ animation:vgspeed 1.25s ease-out 2.45s forwards; }
+  @keyframes vgspeed{ 0%{ opacity:0; transform:scale(.7) rotate(0deg); } 12%{ opacity:.85; } 100%{ opacity:0; transform:scale(1.9) rotate(28deg); } }
+  .vg-streak{ position:absolute; top:0; bottom:0; left:-30%; width:16%; opacity:0;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent); }
+  .vg-streak.s1{ transform:skewX(-18deg); }
+  .vg-streak.s2{ transform:skewX(10deg); width:9%; }
+  .vg-streak.s3{ transform:skewX(-30deg); width:12%; }
+  .vignette.play .vg-streak.s1{ animation:vgstreak .7s ease-in 2.5s forwards; }
+  .vignette.play .vg-streak.s2{ animation:vgstreak .7s ease-in 2.68s forwards; }
+  .vignette.play .vg-streak.s3{ animation:vgstreak .7s ease-in 2.86s forwards; }
   @keyframes vgstreak{ 0%{ left:-30%; opacity:0; } 15%{ opacity:1; } 100%{ left:120%; opacity:0; } }
   .vg-rings{ position:absolute; inset:0; display:grid; place-items:center; }
   .vg-rings i{ position:absolute; width:26vmin; height:26vmin; border:3px solid var(--gul); border-radius:50%; opacity:0; }
-  .vignette.play .vg-rings i{ animation:vgring 1.6s cubic-bezier(.2,.7,.3,1) forwards; }
-  .vignette.play .vg-rings i:nth-child(1){ animation-delay:.35s; }
-  .vignette.play .vg-rings i:nth-child(2){ animation-delay:.6s; border-color:#fff; }
-  .vignette.play .vg-rings i:nth-child(3){ animation-delay:.85s; border-color:var(--oransje); }
-  @keyframes vgring{ 0%{ transform:scale(.2); opacity:0; } 20%{ opacity:.9; } 100%{ transform:scale(4.2); opacity:0; } }
+  .vignette.play .vg-rings i{ animation:vgringx 1.4s cubic-bezier(.2,.7,.3,1) forwards; }
+  .vignette.play .vg-rings i:nth-child(1){ animation-delay:2.5s; }
+  .vignette.play .vg-rings i:nth-child(2){ animation-delay:2.7s; border-color:#fff; }
+  .vignette.play .vg-rings i:nth-child(3){ animation-delay:2.9s; border-color:var(--oransje); }
+  @keyframes vgringx{ 0%{ transform:scale(.2); opacity:0; } 20%{ opacity:.9; } 100%{ transform:scale(4.6); opacity:0; } }
   .vg-logo{ position:absolute; inset:0; justify-content:center; opacity:0; }
   .vg-logo .sky,.vg-logo .sport{ font-size:clamp(44px,8vw,110px); }
-  .vignette.play .vg-logo{ animation:vglogo 1.7s cubic-bezier(.2,1.4,.3,1) .8s forwards; }
-  @keyframes vglogo{ 0%{ opacity:0; transform:scale(.4); } 18%{ opacity:1; transform:scale(1.06); } 30%{ transform:scale(1); } 80%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.3); } }
-  .vg-words{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:6vh; }
-  .vg-words .w1{ font-size:clamp(40px,9vw,120px); color:#16100a; letter-spacing:.02em; opacity:0; text-shadow:0 4px 0 rgba(255,255,255,.25), 0 10px 30px rgba(0,0,0,.25); }
+  .vignette.play .vg-logo{ animation:vglogo 1.05s linear 2.6s forwards; }
+  @keyframes vglogo{
+    0%{ opacity:0; transform:scale(.3); }
+    10%{ opacity:1; transform:scale(1.07); }
+    18%{ transform:scale(1); }
+    30%{ transform:translate(-9px,3px) scale(1); clip-path:inset(8% 0 34% 0); }
+    34%{ transform:translate(7px,-4px) scale(1); clip-path:inset(48% 0 8% 0); }
+    38%{ transform:translate(0,0) scale(1); clip-path:inset(0 0 0 0); }
+    48%{ transform:translate(5px,2px) scale(1); clip-path:inset(20% 0 20% 0); }
+    52%{ transform:translate(0,0) scale(1); clip-path:inset(0 0 0 0); }
+    82%{ opacity:1; transform:scale(1.02); }
+    100%{ opacity:0; transform:scale(1.5); }
+  }
+
+  /* fase C: avsløring */
+  .vg-core{ position:absolute; inset:0; }
+  .vignette.play .vg-core{ animation:vgzoom 4.6s ease-in-out 4.6s forwards; }
+  @keyframes vgzoom{ to{ transform:scale(1.055); } }
+  .vg-bg{ position:absolute; inset:0; opacity:0;
+    background:linear-gradient(135deg, #fff3a0 0%, var(--gul) 22%, var(--oransje) 62%, var(--dyporansje) 100%); }
+  .vg-bg::after{ content:""; position:absolute; inset:-20%;
+    background-image:repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 2px, transparent 2px 70px);
+    animation:slide 5s linear infinite; }
+  .vignette.play .vg-bg{ animation:vgbgin .35s linear 3.5s forwards; }
+  @keyframes vgbgin{ to{ opacity:1; } }
+  .vg-panels{ position:absolute; inset:0; pointer-events:none; }
+  .vg-panels i{ position:absolute; top:-12%; bottom:-12%; width:46%; transform:translateX(-300%) skewX(-14deg); }
+  .vg-panels i:nth-child(1){ left:-4%; background:var(--gul); }
+  .vg-panels i:nth-child(2){ left:31%; background:var(--oransje); }
+  .vg-panels i:nth-child(3){ left:66%; background:var(--dyporansje); }
+  .vignette.play .vg-panels i:nth-child(1){ animation:vgpanel .6s cubic-bezier(.35,.6,.25,1) 3.3s forwards; }
+  .vignette.play .vg-panels i:nth-child(2){ animation:vgpanel .6s cubic-bezier(.35,.6,.25,1) 3.44s forwards; }
+  .vignette.play .vg-panels i:nth-child(3){ animation:vgpanel .6s cubic-bezier(.35,.6,.25,1) 3.58s forwards; }
+  @keyframes vgpanel{ 0%{ transform:translateX(-300%) skewX(-14deg); } 100%{ transform:translateX(300%) skewX(-14deg); } }
+  .vg-words{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:6vh; perspective:800px; }
+  .vg-words .w1{ font-size:clamp(40px,9vw,120px); color:#16100a; letter-spacing:.04em; text-shadow:0 4px 0 rgba(255,255,255,.25), 0 10px 30px rgba(0,0,0,.25); }
+  .vg-words .w1 i{ display:inline-block; font-style:normal; opacity:0; transform-origin:50% 100%; }
+  .vignette.play .w1 i{ animation:vglet .42s cubic-bezier(.2,1.2,.3,1) forwards; }
+  .vignette.play .w1 i:nth-child(1){ animation-delay:3.95s; }
+  .vignette.play .w1 i:nth-child(2){ animation-delay:4.01s; }
+  .vignette.play .w1 i:nth-child(3){ animation-delay:4.06s; }
+  .vignette.play .w1 i:nth-child(4){ animation-delay:4.12s; }
+  .vignette.play .w1 i:nth-child(5){ animation-delay:4.17s; }
+  .vignette.play .w1 i:nth-child(6){ animation-delay:4.23s; }
+  .vignette.play .w1 i:nth-child(7){ animation-delay:4.28s; }
+  .vignette.play .w1 i:nth-child(8){ animation-delay:4.34s; }
+  @keyframes vglet{ 0%{ opacity:0; transform:rotateX(100deg) translateY(-.2em); } 100%{ opacity:1; transform:rotateX(0) translateY(0); } }
   .vg-words .w2{ font-size:clamp(70px,16vw,220px); line-height:.9; color:#16100a; opacity:0; text-shadow:0 5px 0 rgba(255,255,255,.3), 0 14px 40px rgba(0,0,0,.3); }
-  .vignette.play .w1{ animation:vgw1 .45s cubic-bezier(.2,1.1,.3,1) 2.7s forwards; }
-  @keyframes vgw1{ 0%{ opacity:0; transform:translateX(-90vw); } 60%{ opacity:1; transform:translateX(3vw); } 100%{ opacity:1; transform:translateX(0); } }
-  .vignette.play .w2{ animation:vgw2 .5s cubic-bezier(.25,1.6,.35,1) 3.5s forwards; }
-  @keyframes vgw2{ 0%{ opacity:0; transform:scale(3.2); } 55%{ opacity:1; transform:scale(.94); } 100%{ opacity:1; transform:scale(1); } }
-  .vignette.play .vg-words{ animation:vgshake .3s linear 3.7s; }
-  @keyframes vgshake{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-8px,5px); } 50%{ transform:translate(7px,-5px); } 75%{ transform:translate(-5px,-4px); } }
+  .vignette.play .w2{ animation:vgw2 .5s cubic-bezier(.25,1.5,.35,1) 4.5s forwards; }
+  @keyframes vgw2{ 0%{ opacity:0; transform:scale(3.6); } 55%{ opacity:1; transform:scale(.93); } 100%{ opacity:1; transform:scale(1); } }
+  .vignette.play .vg-words{ animation:vgshake .35s linear 4.6s, vgshake .45s linear 7.25s; }
+  @keyframes vgshake{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-9px,6px); } 50%{ transform:translate(8px,-6px); } 75%{ transform:translate(-6px,-4px); } }
+
+  /* fase D: bygg */
   .vg-sub{ position:absolute; left:0; right:0; bottom:24vh; text-align:center; font-size:clamp(15px,2.2vw,30px); letter-spacing:.28em; color:#2a1c00; opacity:0; }
-  .vignette.play .vg-sub{ animation:vgsub .6s ease 4.5s forwards; }
+  .vignette.play .vg-sub{ animation:vgsub .6s ease 5.3s forwards; }
   @keyframes vgsub{ 0%{ opacity:0; transform:translateY(24px); } 100%{ opacity:1; transform:translateY(0); } }
-  .vg-direkte{ position:absolute; top:7vh; left:50%; transform:translateX(-50%) scale(0); background:#c8102e; color:#fff; font-size:clamp(20px,3vw,42px); letter-spacing:.14em; padding:.35em .9em; border-radius:8px; box-shadow:0 10px 34px rgba(0,0,0,.4); }
-  .vignette.play .vg-direkte{ animation:vgdir .45s cubic-bezier(.25,1.7,.35,1) 5.6s forwards, flashbg 1s steps(1) 6.05s infinite; }
-  @keyframes vgdir{ 0%{ transform:translateX(-50%) scale(0) rotate(-6deg); } 70%{ transform:translateX(-50%) scale(1.15) rotate(1deg); } 100%{ transform:translateX(-50%) scale(1); } }
+
+  /* fase E: på lufta */
+  .vg-shock{ position:absolute; left:50%; top:50%; width:22vmin; height:22vmin; margin:-11vmin 0 0 -11vmin; border:4px solid rgba(255,255,255,.85); border-radius:50%; opacity:0; pointer-events:none; }
+  .vg-shock.k2{ top:13vh; }
+  .vignette.play .vg-shock.k1{ animation:vgshock .75s cubic-bezier(.1,.7,.3,1) 4.5s forwards; }
+  .vignette.play .vg-shock.k2{ animation:vgshock .85s cubic-bezier(.1,.7,.3,1) 7.2s forwards; }
+  @keyframes vgshock{ 0%{ opacity:.9; transform:scale(.15); } 100%{ opacity:0; transform:scale(7); } }
+  .vg-direkte{ position:absolute; top:7vh; left:50%; transform:translateX(-50%) translateY(-40vh) scale(1.4); background:#c8102e; color:#fff; font-size:clamp(20px,3vw,42px); letter-spacing:.14em; padding:.35em .9em; border-radius:8px; box-shadow:0 10px 34px rgba(0,0,0,.4); }
+  .vignette.play .vg-direkte{ animation:vgdir .5s cubic-bezier(.3,1.4,.35,1) 7.2s forwards, flashbg 1s steps(1) 7.75s infinite; }
+  @keyframes vgdir{ 0%{ transform:translateX(-50%) translateY(-40vh) scale(1.5) rotate(-5deg); } 65%{ transform:translateX(-50%) translateY(1.5vh) scale(1.04) rotate(1.5deg); } 100%{ transform:translateX(-50%) translateY(0) scale(1); } }
   .vg-flash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
-  .vignette.play .vg-flash{ animation:vgflash1 .35s ease 3.5s, vgflash2 .6s ease 5.6s; }
-  @keyframes vgflash1{ 0%{ opacity:.55; } 100%{ opacity:0; } }
-  @keyframes vgflash2{ 0%{ opacity:.95; } 100%{ opacity:0; } }
+  .vignette.play .vg-flash{ animation:vgfl .3s ease 2.45s, vgfl .35s ease 4.5s, vgflbig .7s ease 7.2s; }
+  @keyframes vgfl{ 0%{ opacity:.5; } 100%{ opacity:0; } }
+  @keyframes vgflbig{ 0%{ opacity:.97; } 100%{ opacity:0; } }
 </style>
 </head>
 <body>
@@ -385,15 +463,25 @@
 
   <!-- VIGNETT -->
   <div class="vignette" id="vignette">
-    <div class="vg-bg"></div>
-    <div class="vg-streak"></div>
+    <div class="vg-grid"></div>
+    <div class="vg-count"><b></b><i class="c3">3</i><i class="c2">2</i><i class="c1">1</i></div>
+    <div class="vg-speed"></div>
+    <div class="vg-streak s1"></div>
+    <div class="vg-streak s2"></div>
+    <div class="vg-streak s3"></div>
     <div class="vg-rings"><i></i><i></i><i></i></div>
     <div class="logo vg-logo"><span class="sky">sky</span><span class="sport">sports</span></div>
-    <div class="vg-words">
-      <span class="w1">DEADLINE</span>
-      <span class="w2">DAY</span>
+    <div class="vg-core">
+      <div class="vg-bg"></div>
+      <div class="vg-words">
+        <span class="w1"><i>D</i><i>E</i><i>A</i><i>D</i><i>L</i><i>I</i><i>N</i><i>E</i></span>
+        <span class="w2">DAY</span>
+      </div>
+      <div class="vg-sub">JONAS &amp; EIRIN · 11. JULI 2026</div>
     </div>
-    <div class="vg-sub">JONAS &amp; EIRIN · 11. JULI 2026</div>
+    <div class="vg-panels"><i></i><i></i><i></i></div>
+    <div class="vg-shock k1"></div>
+    <div class="vg-shock k2"></div>
     <div class="vg-direkte">● DIREKTE</div>
     <div class="vg-flash"></div>
   </div>
@@ -528,12 +616,45 @@
       mnote(f/2,t,dur,"square",.05,vigGain);
     });
   }
-  function timp(t){
+  function timp(t,vol){
+    vol=vol||.55;
     const c=ac(), o=c.createOscillator(), g=c.createGain();
     o.type="sine"; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(45,t+.35);
     o.connect(g); g.connect(vigGain);
-    g.gain.setValueAtTime(.55,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
     o.start(t); o.stop(t+.55);
+  }
+  function braam(t,dur){ /* dyp "filmtrailer"-horn: detunet sag-stack gjennom lavpass */
+    const c=ac(), lp=c.createBiquadFilter();
+    lp.type="lowpass"; lp.Q.value=1.2;
+    lp.frequency.setValueAtTime(180,t);
+    lp.frequency.linearRampToValueAtTime(1600,t+dur*.55);
+    lp.frequency.linearRampToValueAtTime(250,t+dur);
+    lp.connect(vigGain);
+    [55,82.41,110,164.81].forEach(f=>{
+      [-9,0,9].forEach(det=>{
+        const o=c.createOscillator(), g=c.createGain();
+        o.type="sawtooth"; o.frequency.setValueAtTime(f,t); o.detune.value=det;
+        o.connect(g); g.connect(lp);
+        g.gain.setValueAtTime(.0001,t);
+        g.gain.linearRampToValueAtTime(.055,t+.09);
+        g.gain.setValueAtTime(.055,t+dur*.6);
+        g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+        o.start(t); o.stop(t+dur+.05);
+      });
+    });
+  }
+  function drone(t,dur){ /* stigende spennings-drone under nedtellingen */
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.type="sine"; o.frequency.setValueAtTime(36,t); o.frequency.linearRampToValueAtTime(56,t+dur);
+    o.connect(g); g.connect(vigGain);
+    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.32,t+dur*.85); g.gain.exponentialRampToValueAtTime(.0001,t+dur+.25);
+    o.start(t); o.stop(t+dur+.3);
+    noiseB(t,dur,.05,140,700,vigGain);
+  }
+  function shimmer(t){ /* raskt arpeggio-glitter over sluttakkorden */
+    const ns=[880,1108.73,1318.51,1760,2217.46,2637.02];
+    for(let i=0;i<18;i++) mnote(ns[i%6]*(i>11?2:1), t+i*.065, .3, "triangle", .045, vigGain);
   }
   function boom(t){
     const c=ac(), o=c.createOscillator(), g=c.createGain();
@@ -545,22 +666,33 @@
   function playVignetteMusic(){
     const c=ac(); master();
     vigGain=c.createGain(); vigGain.gain.value=1; vigGain.connect(musicMaster);
-    const t0=c.currentTime+.08, b=60/132;
-    boom(t0);
-    for(let i=0;i<24;i++){
-      const t=t0+i*b/2; if(t>t0+5.5) break;
-      mnote(i%4===0?55:110, t, b*.32, "sawtooth", .10, vigGain);
-      noiseB(t,.05,i%2?.045:.028,6000,0,vigGain);
+    const t0=c.currentTime+.08, b=60/140;
+    /* fase A: nedtelling 3-2-1 med drone */
+    drone(t0,2.3);
+    mnote(660,t0+.05,.14,"square",.14,vigGain);
+    mnote(660,t0+.85,.14,"square",.14,vigGain);
+    mnote(990,t0+1.65,.5,"square",.17,vigGain);
+    /* fase B: tenning */
+    braam(t0+2.45,1.4);
+    for(let i=0;;i++){
+      const t=t0+2.5+i*b/2; if(t>t0+7.1) break;
+      mnote(i%4===0?55:110, t, b*.3, "sawtooth", .11, vigGain);
+      noiseB(t,.04,i%2?.05:.03,6500,0,vigGain);
     }
-    [0,1.15,2.3,3.5].forEach(x=>timp(t0+x));
-    stab(t0+2.7,[220,261.63,329.63]);
-    stab(t0+3.0,[174.61,220,261.63]);
-    stab(t0+3.5,[261.63,329.63,392],.6);
-    stab(t0+4.4,[196,246.94,293.66],.5);
-    noiseB(t0+4.3,1.3,.15,300,3200,vigGain);
-    boom(t0+5.6);
-    noiseB(t0+5.6,1.2,.2,6000,700,vigGain);
-    stab(t0+5.6,[220,277.18,329.63,440],1.7);
+    /* fase C: stabs synket med DEADLINE/DAY */
+    stab(t0+3.5,[220,261.63,329.63],.45);
+    stab(t0+3.95,[174.61,220,261.63],.45);
+    stab(t0+4.5,[261.63,329.63,392],.7); timp(t0+4.5,.7);
+    noiseB(t0+4.5,.5,.12,7000,1200,vigGain);
+    stab(t0+5.2,[196,246.94,293.66],.5);
+    /* fase D: bygg med riser og trommevirvel */
+    noiseB(t0+5.4,1.8,.16,250,4000,vigGain);
+    (function(){ let t=t0+5.5, iv=.21; while(t<t0+7.05){ timp(t,.32); iv=Math.max(.065,iv*.87); t+=iv; } })();
+    /* fase E: PÅ LUFTA */
+    boom(t0+7.2);
+    noiseB(t0+7.2,1.4,.22,6000,600,vigGain);
+    stab(t0+7.2,[220,277.18,329.63,440],2.2);
+    shimmer(t0+7.3);
   }
   function toggleFullscreen(){
     if(!document.fullscreenElement) document.documentElement.requestFullscreen();
@@ -749,7 +881,7 @@
     standbyEl.classList.add("gone");
     vignetteEl.classList.add("play");
     playVignetteMusic();
-    goLiveTimer=setTimeout(goLive,7100);
+    goLiveTimer=setTimeout(goLive,9200);
   }
   function skipVignette(){
     if(state!=="vignette") return;
