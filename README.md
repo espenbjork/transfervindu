@@ -15,4 +15,20 @@ F = fullskjerm, M = lyd av/på.
 
 Hurtigtaster i studio:
 Mellomrom = start/pause · R = nullstill · ↑/↓ = ±1 min ·
-B = breaking · C = spillerkort · D = DONE DEAL · M = lyd · F = fullskjerm
+B = breaking · C = spillerkort · D = DONE DEAL ·
+T = gjestefeed · M = lyd · F = fullskjerm
+
+## Live gjestefeed ("SISTE FRA SALEN")
+
+Bruker samme backend som bryllupsbackdrop-en: gjestene sender hilsener via
+send.html (QR-koden på backdropen), Apps Script lagrer i Google Sheets, og
+denne skjermen poller etter nye meldinger hvert 3. sekund. Innkommende
+meldinger vises som X/Twitter-kort i en feed til høyre, maks 3 om gangen.
+
+- Kun meldinger som kommer inn ETTER at sendingen er i gang vises
+  (historikk og middagshilsener hopper vi over).
+- FEED_URL øverst i index.html skal være identisk med SCRIPT_URL i
+  bryllupsbackdrop/config.js. NB: redeploy av Apps Script med "New
+  deployment" gir ny URL som må oppdateres begge steder.
+- Test uten backend: åpne siden med ?demo=1 (falske meldinger etter
+  at sendingen er startet).

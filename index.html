@@ -201,6 +201,29 @@
   /* lyd-indikator */
   .mute{ position:absolute; bottom:calc(16vh + 60px); right:24px; z-index:12; background:rgba(10,7,0,.7); color:#fff; font-family:"Helvetica Neue",Arial; font-size:13px; padding:6px 12px; border-radius:20px; opacity:.5; transition:opacity .3s; }
 
+  /* ---------- LIVE GJESTEFEED (samme backend som bryllupsbackdrop) ---------- */
+  .feed{ position:absolute; top:13vh; right:22px; width:clamp(250px,24vw,360px); z-index:12; display:flex; flex-direction:column; gap:10px; }
+  .feed.hidden{ display:none; }
+  .feed-tag{ align-self:flex-end; display:flex; align-items:center; gap:9px; background:#0a0a0a; color:#fff; font-size:clamp(12px,1.2vw,16px); letter-spacing:.14em; padding:.45em .9em; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.3); }
+  .feed-tag .x{ font-style:italic; font-weight:900; background:#fff; color:#111; width:1.4em; height:1.4em; border-radius:4px; display:grid; place-items:center; }
+  .feed-tag .dot{ width:.6em; height:.6em; border-radius:50%; background:#2bd94e; animation:blink 1.4s steps(1) infinite; }
+  .feed-tag.feil .dot{ background:#ff9f43; animation:none; }
+  .feed-cards{ display:flex; flex-direction:column; gap:10px; }
+  .gtweet{ background:#fff; color:#0f1419; border-radius:14px; padding:12px 14px; font-family:"Helvetica Neue",Arial,sans-serif; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden; position:relative; animation:gtin .55s cubic-bezier(.2,1.1,.3,1); }
+  @keyframes gtin{
+    0%{ opacity:0; transform:translateX(115%); max-height:0; padding-top:0; padding-bottom:0; margin-bottom:-10px; }
+    60%{ opacity:1; transform:translateX(-2%); }
+    100%{ opacity:1; transform:translateX(0); max-height:300px; padding-top:12px; padding-bottom:12px; margin-bottom:0; }
+  }
+  .gtweet .gh{ display:flex; align-items:flex-start; gap:9px; margin-bottom:6px; }
+  .gtweet .gav{ width:38px; height:38px; border-radius:50%; color:#fff; display:grid; place-items:center; font-family:"Arial Black",sans-serif; font-size:15px; flex:0 0 auto; }
+  .gtweet .gnavn{ font-weight:800; font-size:15px; line-height:1.2; display:inline-flex; align-items:center; gap:4px; }
+  .gtweet .gnavn .check{ color:#1d9bf0; font-size:14px; }
+  .gtweet .ghandle{ color:#536471; font-weight:500; font-size:13px; }
+  .gtweet .gx{ margin-left:auto; font-weight:900; font-style:italic; font-size:19px; }
+  .gtweet .gtxt{ font-size:clamp(14px,1.35vw,17px); line-height:1.35; font-weight:500; overflow-wrap:break-word; }
+  .gtweet.emoji .gtxt{ font-size:44px; text-align:center; padding:4px 0 2px; }
+
   /* ---------- VENTEBILDE (før sending) ---------- */
   .standby{
     position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
@@ -425,6 +448,12 @@
 
     <div class="mute" id="mute">🔊 Lyd på (M)</div>
 
+    <!-- LIVE GJESTEFEED -->
+    <div class="feed" id="feed">
+      <div class="feed-tag" id="feed-tag"><span class="dot"></span> SISTE FRA SALEN <span class="x">𝕏</span></div>
+      <div class="feed-cards" id="feed-cards"></div>
+    </div>
+
     <!-- DONE DEAL -->
     <canvas id="confetti"></canvas>
     <div class="done-overlay" id="done">
@@ -439,7 +468,8 @@
       <h2>🎙️ Overgangsvindu – studio</h2>
       <div>
         <kbd>Mellomrom</kbd> start/pause · <kbd>R</kbd> nullstill · <kbd>↑</kbd>/<kbd>↓</kbd> ±1 min<br>
-        <kbd>B</kbd> breaking · <kbd>C</kbd> spillerkort · <kbd>D</kbd> DONE DEAL · <kbd>M</kbd> lyd · <kbd>F</kbd> fullskjerm
+        <kbd>B</kbd> breaking · <kbd>C</kbd> spillerkort · <kbd>D</kbd> DONE DEAL<br>
+        <kbd>T</kbd> gjestefeed · <kbd>M</kbd> lyd · <kbd>F</kbd> fullskjerm
       </div>
       <small>Forsvinner automatisk. Trykk <kbd>H</kbd> for å vise igjen.</small>
     </div>
@@ -523,6 +553,17 @@
     fee:"💰 Verdi: 1 livslangt JA + 2 katter"
   };
 
+  /* ====== LIVE GJESTEFEED ======
+     Samme backend som bryllupsbackdrop: gjestene sender via send.html (QR),
+     Apps Script lagrer i Google Sheets, skjermen poller ?since=<id>.
+     URL-en skal være identisk med SCRIPT_URL i bryllupsbackdrop/config.js.
+     Kun meldinger som kommer inn ETTER at sendingen er i gang vises.
+     Test uten backend: åpne siden med ?demo=1 */
+  const FEED_URL = "https://script.google.com/macros/s/AKfycbyDo4xdYQm8JJAzTieFWE95Q5bMu0XF3DUJcO1WxAmWbesVbx4iRhLgtAQoOhInDmsZrA/exec";
+  const FEED_POLL_MS = 3000;      // hvor ofte vi ser etter nye meldinger
+  const FEED_MIN_GAP_MS = 2600;   // minste tid mellom hvert kort på skjermen
+  const FEED_MAX_CARDS = 3;       // maks synlige kort i feeden
+
   /* ================= LYDMOTOR (Web Audio, ingen filer) ================= */
   let actx=null, muted=false;
   function ac(){ if(!actx){ actx=new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==="suspended") actx.resume(); return actx; }
@@ -539,6 +580,7 @@
   const sndCount =()=>beep(740,.09,"square",.2);
   const sndHorn  =()=>{ [220,277,330].forEach((f,i)=>beep(f,1.2,"sawtooth",.18,i*.02)); beep(110,1.3,"sawtooth",.14); };
   const sndPop   =()=>beep(520+Math.random()*400,.07,"square",.12);
+  const sndTweet =()=>{ beep(1046,.06,"sine",.14); beep(1568,.09,"sine",.11,.07); };
 
   /* ================= MUSIKKMOTOR (Web Audio, ingen filer) ================= */
   let musicMaster=null, loopGain=null, loopTimer=null, loopNext=0, loopBar=0, loopVol=0, vigGain=null;
@@ -773,6 +815,69 @@
     bHide=setTimeout(()=>bEl.classList.remove("show"), 6500);
   }
 
+  /* ================= LIVE GJESTEFEED ================= */
+  const feedEl=document.getElementById("feed"), feedTag=document.getElementById("feed-tag"), feedCards=document.getElementById("feed-cards");
+  let feedQueue=[], feedLastShown=0, feedSinceId=0, feedOn=true;
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const FEEDCOLORS=["#1d9bf0","#e2002a","#ff8a00","#16a34a","#7c3aed","#db2777","#0891b2","#ca8a04"];
+  function feedHash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
+  function visGjestetweet(m){
+    const emoji=m.type==="emoji";
+    const name=(m.name||"Gjest i salen").trim()||"Gjest i salen";
+    const initialer=name.split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase()||"G";
+    const handle="@"+(name.replace(/\s+/g,"")||"gjest");
+    const col=FEEDCOLORS[feedHash(name)%FEEDCOLORS.length];
+    const el=document.createElement("div");
+    el.className="gtweet"+(emoji?" emoji":"");
+    el.innerHTML=
+      `<div class="gh"><span class="gav" style="background:${col}">${esc(initialer)}</span>`+
+      `<span><span class="gnavn">${esc(name)} <span class="check">✔</span></span><br>`+
+      `<span class="ghandle">${esc(handle)} · nå</span></span>`+
+      `<span class="gx">𝕏</span></div>`+
+      `<div class="gtxt">${esc(m.message||"")}</div>`;
+    feedCards.prepend(el);
+    sndTweet();
+    while(feedCards.children.length>FEED_MAX_CARDS) feedCards.lastElementChild.remove();
+  }
+  function feedFetch(){
+    if(!FEED_URL) return;
+    fetch(FEED_URL+"?since="+feedSinceId)
+      .then(r=>r.json())
+      .then(data=>{
+        feedTag.classList.remove("feil");
+        (data.messages||[]).forEach(m=>{
+          if(m.id>feedSinceId) feedSinceId=m.id;
+          // Historikk og meldinger sendt før sendestart vises ikke,
+          // kun det som kommer inn mens innslaget er i gang.
+          if(state==="live") feedQueue.push(m);
+        });
+      })
+      .catch(()=>feedTag.classList.add("feil"));
+  }
+  feedFetch();
+  setInterval(feedFetch,FEED_POLL_MS);
+  setInterval(()=>{
+    if(state!=="live"||!feedOn||!feedQueue.length) return;
+    const nå=Date.now();
+    if(nå-feedLastShown<FEED_MIN_GAP_MS) return;
+    feedLastShown=nå;
+    visGjestetweet(feedQueue.shift());
+  },700);
+  function toggleFeed(){ feedOn=!feedOn; feedEl.classList.toggle("hidden",!feedOn); }
+  /* Demomodus: ?demo=1 mater feeden med testmeldinger når sendingen er live */
+  if(new URLSearchParams(location.search).get("demo")){
+    const demo=[
+      {type:"text", name:"Tante Randi", message:"Tidenes signering! Gratulerer, Eirin og Jonas! 🥂"},
+      {type:"emoji", message:"💍"},
+      {type:"text", name:"Fredrik", message:"Her var det full klaff mellom klubb og spiller. Skål!"},
+      {type:"text", name:"Kollegene til Jonas", message:"Endelig en overgang han ikke trengte betenkningstid på 😄"},
+      {type:"emoji", message:"❤️"},
+      {type:"text", name:"Mormor", message:"Lykke til på ferden, kjære dere. Dette blir fint!"},
+    ];
+    let di=0;
+    setInterval(()=>{ if(state==="live") feedQueue.push(demo[di++%demo.length]); },4000);
+  }
+
   /* ================= DONE DEAL + KONFETTI ================= */
   const done=document.getElementById("done"), cv=document.getElementById("confetti"), ctx=cv.getContext("2d");
   let parts=[], raf=null;
@@ -855,6 +960,7 @@
       case "c": case "C": toggleCard(); break;
       case "d": case "D": doneDeal(); break;
       case "m": case "M": toggleMute(); break;
+      case "t": case "T": toggleFeed(); break;
       case "h": case "H": flashHelp(); break;
       case "Escape": closeDone(); card.classList.remove("show"); break;
       case "f": case "F": toggleFullscreen(); break;
