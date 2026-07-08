@@ -485,7 +485,7 @@
         <kbd>B</kbd> breaking · <kbd>C</kbd> spillerkort · <kbd>D</kbd> DONE DEAL<br>
         <kbd>T</kbd> gjestefeed · <kbd>M</kbd> lyd · <kbd>F</kbd> fullskjerm
       </div>
-      <small>Forsvinner automatisk. Trykk <kbd>H</kbd> for å vise igjen.</small>
+      <small>Reservevisning (popup ble blokkert). Trykk <kbd>H</kbd> for å skjule/vise.</small>
     </div>
   </div>
 
@@ -499,7 +499,7 @@
       <button class="sb-start" id="sb-start">▶ START SENDINGEN</button>
       <div class="sb-hints">
         <span id="sb-lyd">🔇 Klikk hvor som helst for ventemusikk</span><br>
-        <kbd>Enter</kbd> start sendingen · <kbd>F</kbd> fullskjerm · <kbd>M</kbd> lyd
+        <kbd>Enter</kbd> start sendingen · <kbd>F</kbd> fullskjerm · <kbd>M</kbd> lyd · <kbd>H</kbd> hjelp (eget vindu)
       </div>
     </div>
     <div class="sb-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -953,8 +953,56 @@
 
   /* ================= HJELP ================= */
   const help=document.getElementById("help");
-  let helpTimer=null; /* vises først når sendingen er i gang */
+  let helpTimer=null; /* overlayet er kun reserve hvis popup blokkeres */
   function flashHelp(){ help.classList.toggle("hidden"); clearTimeout(helpTimer); if(!help.classList.contains("hidden")) helpTimer=setTimeout(()=>help.classList.add("hidden"),7000); }
+  /* Hjelpen åpnes i eget vindu så den kan leses på operatørskjermen
+     uten å vises på storskjermen. Faller tilbake til overlay ved popup-blokkering. */
+  function openHelp(){
+    const w=window.open("","transferhjelp","width=460,height=780,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes");
+    if(!w){ flashHelp(); return; }
+    const rad=(k,t)=>`<div class="rad"><kbd>${k}</kbd><span>${t}</span></div>`;
+    w.document.open();
+    w.document.write(`<!DOCTYPE html><html lang="no"><head><meta charset="UTF-8">
+<title>Studio-hjelp – Overgangsvindu</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0d0d0d;color:#eee;font-family:"Helvetica Neue",Arial,sans-serif;padding:22px 24px 28px;font-size:15px;line-height:1.5}
+  h1{font-size:19px;color:#ffd000;margin-bottom:2px;font-family:"Arial Black",sans-serif}
+  .sub{color:#999;font-size:12.5px;margin-bottom:16px}
+  h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#ffd000;margin:18px 0 7px;border-bottom:1px solid #2c2c2c;padding-bottom:5px}
+  .rad{display:flex;align-items:baseline;gap:12px;padding:4px 0}
+  kbd{flex:0 0 auto;min-width:88px;text-align:center;background:#fff;color:#111;border-radius:5px;padding:2px 8px;font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px}
+  .rad span{color:#ddd}
+  .tips{margin-top:20px;background:#1a1a1a;border-left:3px solid #ffd000;border-radius:6px;padding:10px 14px;color:#bbb;font-size:13px}
+  .tips b{color:#ffd000}
+  code{background:#222;padding:1px 6px;border-radius:4px;font-size:12.5px}
+</style></head><body>
+<h1>🎙️ Overgangsvindu – studio</h1>
+<div class="sub">Hurtigtaster for innslaget. Hold dette vinduet på din egen skjerm – det vises ikke på storskjermen.</div>
+<h2>Før sendingen (ventebildet)</h2>
+${rad("Enter","Start sendingen (eller klikk START-knappen)")}
+${rad("Klikk","Skru på ventemusikken (første klikk hvor som helst)")}
+${rad("F","Fullskjerm av/på – gjør dette før sendestart")}
+${rad("M","Lyd av/på")}
+${rad("H","Denne hjelpen")}
+<h2>Under vignetten (~9 sek)</h2>
+${rad("Esc","Hopp rett til studio (kjekt på øving)")}
+<h2>I studio (innslaget)</h2>
+${rad("Mellomrom","Start/pause nedtellingen (eller klikk i bildet)")}
+${rad("R","Nullstill klokka")}
+${rad("↑ / ↓","Pluss/minus ett minutt")}
+${rad("B","Breaking-banner (ny overskrift hver gang)")}
+${rad("C","Spillerkortet til Jonas av/på")}
+${rad("D","DONE DEAL-finale med konfetti (Esc lukker)")}
+${rad("T","Gjestefeed + QR-kode av/på")}
+${rad("M","Lyd av/på")}
+${rad("F","Fullskjerm av/på")}
+${rad("H","Denne hjelpen")}
+<div class="tips"><b>Tips:</b> Klokka utløser selv breaking ved 0:30 / 0:20 / 0:10 og DONE DEAL ved null. Gjestefeeden viser kun hilsener sendt etter sendestart. Test uten backend med <code>?demo=1</code> i adressen.</div>
+</body></html>`);
+    w.document.close();
+    w.focus();
+  }
 
   /* ================= TASTATUR ================= */
   document.addEventListener("keydown", e=>{
@@ -962,6 +1010,7 @@
       if(e.key==="Enter"){ e.preventDefault(); startBroadcast(); return; }
       if(e.key==="f"||e.key==="F"){ toggleFullscreen(); return; }
       if(e.key==="m"||e.key==="M"){ toggleMute(); return; }
+      if(e.key==="h"||e.key==="H"){ openHelp(); return; }
       armAudio(); return;
     }
     if(state==="vignette"){
@@ -979,7 +1028,7 @@
       case "d": case "D": doneDeal(); break;
       case "m": case "M": toggleMute(); break;
       case "t": case "T": toggleFeed(); break;
-      case "h": case "H": flashHelp(); break;
+      case "h": case "H": openHelp(); break;
       case "Escape": closeDone(); card.classList.remove("show"); break;
       case "f": case "F": toggleFullscreen(); break;
     }
@@ -1018,9 +1067,6 @@
     vignetteEl.classList.add("gone");
     setTimeout(()=>vignetteEl.classList.remove("play","gone"),700);
     loopStart(.15,2.5); /* lav ventemusikk under innslaget */
-    help.classList.remove("hidden");
-    clearTimeout(helpTimer);
-    helpTimer=setTimeout(()=>help.classList.add("hidden"),8000);
   }
   standbyEl.addEventListener("click", e=>{
     if(e.target.closest(".sb-start")){ startBroadcast(); return; }

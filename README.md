@@ -18,6 +18,10 @@ Mellomrom = start/pause · R = nullstill · ↑/↓ = ±1 min ·
 B = breaking · C = spillerkort · D = DONE DEAL ·
 T = gjestefeed · M = lyd · F = fullskjerm
 
+H åpner hele hjelpen i et eget popup-vindu, ment for operatørskjermen
+slik at den ikke vises på storskjermen. Blokkeres popupen faller den
+tilbake til et overlay på selve bildet.
+
 ## Live gjestefeed ("SISTE FRA SALEN")
 
 Bruker samme backend som bryllupsbackdrop-en: gjestene sender hilsener via
